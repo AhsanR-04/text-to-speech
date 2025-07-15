@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice to Text App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .controls {
+            margin-bottom: 30px;
+        }
+
+        .mic-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mic-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        .mic-button.listening {
+            background: linear-gradient(45deg, #10ac84, #00d2d3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .mic-icon {
+            font-size: 24px;
+            color: white;
+        }
+
+        .status {
+            margin: 20px 0;
+            font-size: 1.1em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .status.listening {
+            color: #10ac84;
+        }
+
+        .transcript-container {
+            margin-top: 30px;
+        }
+
+        .transcript {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 120px;
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            resize: vertical;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .transcript:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-clear {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .btn-copy {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .btn-download {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .language-select {
+            margin-top: 20px;
+        }
+
+        .language-select select {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .language-select select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #28a745;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .unsupported {
+            color: #dc3545;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Voice to Text</h1>
+        
+        <div id="app">
+            <div class="controls">
+                <button class="mic-button" id="micButton">
+                    <span class="mic-icon">🎤</span>
+                </button>
+                <div class="status" id="status">Click the microphone to start</div>
+            </div>
+
+            <div class="language-select">
+                <select id="languageSelect">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
+                    <option value="de-DE">German</option>
+                    <option value="it-IT">Italian</option>
+                    <option value="pt-BR">Portuguese (Brazil)</option>
+                    <option value="ru-RU">Russian</option>
+                    <option value="ja-JP">Japanese</option>
+                    <option value="ko-KR">Korean</option>
+                    <option value="zh-CN">Chinese (Simplified)</option>
+                    <option value="ar-SA">Arabic</option>
+                    <option value="hi-IN">Hindi</option>
+                </select>
+            </div>
+
+            <div class="transcript-container">
+                <textarea class="transcript" id="transcript" placeholder="Your transcribed text will appear here..."></textarea>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-clear" id="clearBtn">Clear</button>
+                <button class="btn btn-copy" id="copyBtn">Copy Text</button>
+                <button class="btn btn-download" id="downloadBtn">Download</button>
+            </div>
+        </div>
+
+        <div id="unsupported" class="unsupported" style="display: none;">
+            Your browser doesn't support speech recognition. Please use Chrome, Safari, or Edge.
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        class VoiceToTextApp {
+            constructor() {
+                this.recognition = null;
+                this.isListening = false;
+                this.transcript = '';
+                this.interimTranscript = '';
+                
+                this.initElements();
+                this.checkSupport();
+                this.setupEventListeners();
+            }
+
+            initElements() {
+                this.micButton = document.getElementById('micButton');
+                this.status = document.getElementById('status');
+                this.transcriptElement = document.getElementById('transcript');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.copyBtn = document.getElementById('copyBtn');
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.languageSelect = document.getElementById('languageSelect');
+                this.notification = document.getElementById('notification');
+                this.app = document.getElementById('app');
+                this.unsupported = document.getElementById('unsupported');
+            }
+
+            checkSupport() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    this.app.style.display = 'none';
+                    this.unsupported.style.display = 'block';
+                    return false;
+                }
+                
+                this.setupRecognition();
+                return true;
+            }
+
+            setupRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.recognition = new SpeechRecognition();
+                
+                this.recognition.continuous = true;
+                this.recognition.interimResults = true;
+                this.recognition.lang = this.languageSelect.value;
+                
+                this.recognition.onstart = () => {
+                    this.isListening = true;
+                    this.updateUI();
+                };
+                
+                this.recognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    
+                    this.interimTranscript = interimTranscript;
+                    if (finalTranscript) {
+                        this.transcript += finalTranscript;
+                        this.interimTranscript = '';
+                    }
+                    
+                    this.updateTranscript();
+                };
+                
+                this.recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    this.showNotification('Error: ' + event.error, 'error');
+                    this.stopListening();
+                };
+                
+                this.recognition.onend = () => {
+                    this.isListening = false;
+                    this.updateUI();
+                };
+            }
+
+            setupEventListeners() {
+                this.micButton.addEventListener('click', () => {
+                    if (this.isListening) {
+                        this.stopListening();
+                    } else {
+                        this.startListening();
+                    }
+                });
+
+                this.clearBtn.addEventListener('click', () => {
+                    this.transcript = '';
+                    this.interimTranscript = '';
+                    this.updateTranscript();
+                    this.showNotification('Text cleared', 'success');
+                });
+
+                this.copyBtn.addEventListener('click', () => {
+                    if (this.transcript) {
+                        navigator.clipboard.writeText(this.transcript).then(() => {
+                            this.showNotification('Text copied to clipboard', 'success');
+                        }).catch(() => {
+                            this.showNotification('Failed to copy text', 'error');
+                        });
+                    }
+                });
+
+                this.downloadBtn.addEventListener('click', () => {
+                    if (this.transcript) {
+                        this.downloadText();
+                    }
+                });
+
+                this.languageSelect.addEventListener('change', () => {
+                    if (this.recognition) {
+                        this.recognition.lang = this.languageSelect.value;
+                        if (this.isListening) {
+                            this.stopListening();
+                            setTimeout(() => this.startListening(), 100);
+                        }
+                    }
+                });
+
+                this.transcriptElement.addEventListener('input', (e) => {
+                    this.transcript = e.target.value;
+                });
+            }
+
+            startListening() {
+                if (!this.recognition) {
+                    this.showNotification('Speech recognition not supported', 'error');
+                    return;
+                }
+                
+                try {
+                    this.recognition.start();
+                } catch (error) {
+                    console.error('Error starting recognition:', error);
+                    this.showNotification('Error starting recognition', 'error');
+                }
+            }
+
+            stopListening() {
+                if (this.recognition && this.isListening) {
+                    this.recognition.stop();
+                }
+            }
+
+            updateUI() {
+                if (this.isListening) {
+                    this.micButton.classList.add('listening');
+                    this.status.textContent = 'Listening... Click to stop';
+                    this.status.classList.add('listening');
+                } else {
+                    this.micButton.classList.remove('listening');
+                    this.status.textContent = 'Click the microphone to start';
+                    this.status.classList.remove('listening');
+                }
+            }
+
+            updateTranscript() {
+                const fullText = this.transcript + this.interimTranscript;
+                this.transcriptElement.value = fullText;
+            }
+
+            downloadText() {
+                const blob = new Blob([this.transcript], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'transcript.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                this.showNotification('Text downloaded', 'success');
+            }
+
+            showNotification(message, type) {
+                this.notification.textContent = message;
+                this.notification.className = `notification ${type}`;
+                this.notification.classList.add('show');
+                
+                setTimeout(() => {
+                    this.notification.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new VoiceToTextApp();
+        });
+    </script>
+</body>
+</html>
